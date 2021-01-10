@@ -1,19 +1,20 @@
 #include <azmq/actor.hpp>
 
-#include <boost/utility/string_ref.hpp>
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/buffer.hpp>
-#include <boost/asio/signal_set.hpp>
-#include <boost/asio/deadline_timer.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+// #include <boost/utility/string_ref.hpp>
+#include <asio/io_service.hpp>
+#include <asio/buffer.hpp>
+#include <asio/signal_set.hpp>
+#include <asio/steady_timer.hpp>
+// #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <memory>
 #include <array>
 #include <atomic>
 #include <iostream>
+// #include <string_view>
 
-namespace asio = boost::asio;
-namespace pt = boost::posix_time;
+// namespace asio = boost::asio;
+// namespace pt = boost::posix_time;
 
 class server_t {
 public:
@@ -24,10 +25,10 @@ public:
 
     void ping() {
         frontend_.send(asio::buffer("PING"));
-        frontend_.async_receive(asio::buffer(buf_), [this](boost::system::error_code const& ec, size_t bytes_transferred) {
+        frontend_.async_receive(asio::buffer(buf_), [this](asio::error_code const& ec, size_t bytes_transferred) {
             if (ec)
                 return;
-            if (boost::string_ref(buf_.data(), bytes_transferred - 1) == "PONG")
+            if (strncmp(buf_.data(), "PONG", bytes_transferred<4?bytes_transferred:4 ) == 0)
                 pimpl_->pongs_++;
         });
     }
@@ -56,12 +57,12 @@ private:
     // we schedule async receives for the backend socket here
     static void do_receive(azmq::socket & backend, std::weak_ptr<impl> pimpl) {
         if (auto p = pimpl.lock()) {
-            backend.async_receive(asio::buffer(p->buf_), [&backend, pimpl](boost::system::error_code const& ec, size_t bytes_transferred) {
+            backend.async_receive(asio::buffer(p->buf_), [&backend, pimpl](asio::error_code const& ec, size_t bytes_transferred) {
                 if (ec)
                     return; // exit on error
 
                 if (auto p = pimpl.lock()) {
-                    if (boost::string_ref(p->buf_.data(), bytes_transferred - 1) != "PING")
+                    if (strncmp(p->buf_.data(), "PING", bytes_transferred<4?bytes_transferred:4 ) != 0)
                         return; // exit if not PING
                     p->pings_++;
                     backend.send(asio::buffer("PONG"));
@@ -85,11 +86,11 @@ private:
 
 
 // ping every 250ms
-void schedule_ping(asio::deadline_timer & timer, server_t & server) {
+void schedule_ping(asio::steady_timer  & timer, server_t & server) {
     server.ping();
 
-    timer.expires_from_now(pt::milliseconds(250));
-    timer.async_wait([&](boost::system::error_code const& ec) {
+    timer.expires_from_now(std::chrono::milliseconds(250));
+    timer.async_wait([&](asio::error_code const& ec) {
         if (ec)
             return;
         schedule_ping(timer, server);
@@ -104,18 +105,18 @@ int main(int argc, char** argv) {
 
     // halt on SIGINT or SIGTERM
     asio::signal_set signals(ios, SIGTERM, SIGINT);
-    signals.async_wait([&](boost::system::error_code const&, int) {
+    signals.async_wait([&](asio::error_code const&, int) {
         ios.stop();
     });
 
     server_t server(ios);
 
-    asio::deadline_timer timer(ios);
+    asio::steady_timer  timer(ios);
     schedule_ping(timer, server);
 
     // run for 5 secods
-    asio::deadline_timer deadline(ios, pt::seconds(5));
-    deadline.async_wait([&](boost::system::error_code const&) {
+    asio::steady_timer  deadline(ios, std::chrono::seconds(5));
+    deadline.async_wait([&](asio::error_code const&) {
         ios.stop();
     });
 

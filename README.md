@@ -76,7 +76,7 @@ http://zeromq.org/intro:read-the-manual
 
 ```cpp
 #include <azmq/socket.hpp>
-#include <boost/asio.hpp>
+#include <asio.hpp>
 #include <array>
 
 namespace asio = boost::asio;

@@ -12,15 +12,15 @@
 #include "error.hpp"
 
 #include <zmq.h>
-#include <boost/asio/buffer.hpp>
-#include <boost/logic/tribool.hpp>
+#include <asio/buffer.hpp>
+
 
 #include <vector>
 #include <string>
 #include <exception>
 
 namespace azmq { namespace opt {
-AZMQ_V1_INLINE_NAMESPACE_BEGIN
+
     // limits for user/azmq-defined options (should be well outside of the valid ZMQ range)
     enum class limits : int {
         lib_min = 1000000,
@@ -128,7 +128,7 @@ AZMQ_V1_INLINE_NAMESPACE_BEGIN
 
         std::exception_ptr value() const { return p_; }
     };
-AZMQ_V1_INLINE_NAMESPACE_END
+
 } }
 
 #endif // AZMQ_OPTION_HPP_

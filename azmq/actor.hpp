@@ -12,12 +12,11 @@
 #include "socket.hpp"
 #include "detail/actor_service.hpp"
 
-#include <boost/asio/io_service.hpp>
+#include <asio/io_service.hpp>
 
 #include <functional>
 
 namespace azmq { namespace actor {
-AZMQ_V1_INLINE_NAMESPACE_BEGIN
 
     using is_alive = detail::actor_service::is_alive;
     using detached = detail::actor_service::detached;
@@ -30,7 +29,7 @@ AZMQ_V1_INLINE_NAMESPACE_BEGIN
      *           number of additional args
      *  \returns peer socket
      *
-     *  \remark The newly created actor will run in a boost::thread, and will
+     *  \remark The newly created actor will run in a std::thread, and will
      *  receive the 'server' end of the pipe as it's first argument.  The actor
      *  will be attached to the lifetime of the returned socket and will run
      *  until it is destroyed.
@@ -59,22 +58,22 @@ AZMQ_V1_INLINE_NAMESPACE_BEGIN
      *      signals in some other way.
      */
     template<typename Function, typename... Args>
-    socket spawn(boost::asio::io_service & peer, bool defer_start, Function && f, Args&&... args) {
-        auto& t = boost::asio::use_service<detail::actor_service>(peer);
+    socket spawn(asio::io_service & peer, bool defer_start, Function && f, Args&&... args) {
+        auto& t = asio::use_service<detail::actor_service>(peer);
         return t.make_pipe(defer_start, std::bind(std::forward<Function>(f),
                                                   std::placeholders::_1,
                                                   std::forward<Args>(args)...));
     }
 
     template<typename Function, typename... Args>
-    socket spawn(boost::asio::io_service & peer, Function && f, Args&&... args) {
-        auto& t = boost::asio::use_service<detail::actor_service>(peer);
+    socket spawn(asio::io_service & peer, Function && f, Args&&... args) {
+        auto& t = asio::use_service<detail::actor_service>(peer);
         return t.make_pipe(false, std::bind(std::forward<Function>(f),
                                             std::placeholders::_1,
                                             std::forward<Args>(args)...));
     }
 
-AZMQ_V1_INLINE_NAMESPACE_END
+
 } // namespace actor
 } // namespace azmq
 #endif // AZMQ_ACTOR_HPP_

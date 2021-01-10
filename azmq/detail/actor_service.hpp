@@ -14,19 +14,17 @@
 #include "../option.hpp"
 #include "service_base.hpp"
 #include "socket_service.hpp"
-#include "config/thread.hpp"
-#include "config/mutex.hpp"
-#include "config/unique_lock.hpp"
-#include "config/condition_variable.hpp"
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
-#include <boost/version.hpp>
-#include <boost/assert.hpp>
-#include <boost/asio/signal_set.hpp>
-#include <boost/container/flat_map.hpp>
+#include <azmq/detail/assert.hpp>
+#include <asio/signal_set.hpp>
+// #include <boost/container/flat_map.hpp>
 
-#if BOOST_VERSION < 10700
-#   define AZMQ_DETAIL_USE_IO_SERVICE 1
-#endif
+// #if BOOST_VERSION < 10700
+// #   define AZMQ_DETAIL_USE_IO_SERVICE 1
+// #endif
 
 #include <string>
 #include <vector>
@@ -42,11 +40,7 @@ namespace detail {
     public:
         inline static std::string get_uri(const char* pfx);
 
-#ifdef AZMQ_DETAIL_USE_IO_SERVICE
-        actor_service(boost::asio::io_service & ios)
-#else
-        actor_service(boost::asio::io_context & ios)	  
-#endif
+        actor_service(asio::io_context & ios)	  
             : azmq::detail::service_base<actor_service>(ios)
         { }
 
@@ -59,19 +53,11 @@ namespace detail {
 
         template<typename T>
         socket make_pipe(bool defer_start, T&& data) {
-#ifdef AZMQ_DETAIL_USE_IO_SERVICE
-            return make_pipe(get_io_service(), defer_start, std::forward<T>(data));
-#else
             return make_pipe(get_io_context(), defer_start, std::forward<T>(data));	    
-#endif
         }
 
         template<typename T>
-#ifdef AZMQ_DETAIL_USE_IO_SERVICE
-        static socket make_pipe(boost::asio::io_service & ios, bool defer_start, T&& data) {
-#else
-        static socket make_pipe(boost::asio::io_context & ios, bool defer_start, T&& data) {
-#endif	  
+        static socket make_pipe(asio::io_context & ios, bool defer_start, T&& data) { 
             auto p = std::make_shared<model<T>>(std::forward<T>(data));
             auto res = p->peer_socket(ios);
             associate_ext(res, handler(std::move(p), defer_start));
@@ -82,14 +68,14 @@ namespace detail {
         struct concept {
             using ptr = std::shared_ptr<concept>;
 
-            boost::asio::io_service io_service_;
-            boost::asio::signal_set signals_;
+            asio::io_service io_service_;
+            asio::signal_set signals_;
             pair_socket socket_;
-            thread_t thread_;
+            std::thread thread_;
 
-            using lock_type = unique_lock_t<mutex_t>;
+            using lock_type = std::unique_lock<std::mutex>;
             mutable lock_type::mutex_type mutex_;
-            mutable condition_variable_t cv_;
+            mutable std::condition_variable cv_;
             bool ready_;
             bool stopped_;
             std::exception_ptr last_error_;
@@ -105,14 +91,12 @@ namespace detail {
 
             virtual ~concept() = default;
 
-#ifdef AZMQ_DETAIL_USE_IO_SERVICE
-            pair_socket peer_socket(boost::asio::io_service & peer) {
-#else	      
-            pair_socket peer_socket(boost::asio::io_context & peer) {
-#endif
+  
+            pair_socket peer_socket(asio::io_context & peer) {
+
                 pair_socket res(peer);
                 auto uri = socket_.endpoint();
-                BOOST_ASSERT_MSG(!uri.empty(), "uri empty");
+                AZMQ_ASSERT_MSG(!uri.empty(), "uri empty");
                 res.connect(uri);
                 return res;
             }
@@ -164,11 +148,11 @@ namespace detail {
 
             static void run(ptr p) {
                 lock_type l { p->mutex_ };
-                p->signals_.async_wait([p](boost::system::error_code const&, int) {
+                p->signals_.async_wait([p](asio::error_code const&, int) {
                     p->io_service_.stop();
                 });
                 p->stopped_ = false;
-                p->thread_ = thread_t([p] {
+                p->thread_ = std::thread([p] {
                     p->ready();
                     try {
                         p->run();
@@ -200,7 +184,7 @@ namespace detail {
                 , defer_start_(defer_start)
             { }
 
-            void on_install(boost::asio::io_service&, void*) {
+            void on_install(asio::io_service&, void*) {
                 if (defer_start_) return;
                 defer_start_ = false;
                 concept::run(p_);
@@ -212,11 +196,11 @@ namespace detail {
             }
 
             template<typename Option>
-            boost::system::error_code set_option(Option const& opt,
-                                                 boost::system::error_code & ec) {
+            asio::error_code set_option(Option const& opt,
+                                                 asio::error_code & ec) {
                 switch (opt.name()) {
                 case is_alive::static_name::value :
-                    ec = make_error_code(boost::system::errc::no_protocol_option);
+                    ec = make_error_code(std::errc::no_protocol_option);
                     break;
                 case detached::static_name::value :
                     {
@@ -233,18 +217,18 @@ namespace detail {
                     }
                     break;
                 case last_error::static_name::value :
-                    ec = make_error_code(boost::system::errc::no_protocol_option);
+                    ec = make_error_code(std::errc::no_protocol_option);
                     break;
                 default:
-                    ec = make_error_code(boost::system::errc::not_supported);
+                    ec = make_error_code(std::errc::not_supported);
                     break;
                 }
                 return ec;
             }
 
             template<typename Option>
-            boost::system::error_code get_option(Option & opt,
-                                                 boost::system::error_code & ec) {
+            asio::error_code get_option(Option & opt,
+                                                 asio::error_code & ec) {
                 switch (opt.name()) {
                 case is_alive::static_name::value :
                     {
@@ -259,7 +243,7 @@ namespace detail {
                     }
                     break;
                 case start::static_name::value :
-                    ec = make_error_code(boost::system::errc::no_protocol_option);
+                    ec = make_error_code(std::errc::no_protocol_option);
                     break;
                 case last_error::static_name::value :
                     {
@@ -268,7 +252,7 @@ namespace detail {
                     }
                     break;
                 default:
-                    ec = make_error_code(boost::system::errc::not_supported);
+                    ec = make_error_code(std::errc::not_supported);
                     break;
                 }
                 return ec;

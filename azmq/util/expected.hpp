@@ -13,12 +13,14 @@
 #ifndef AZMQ_EXPECTED_HPP_
 #define AZMQ_EXPECTED_HPP_
 
-#include <boost/assert.hpp>
+
 #include <exception>
 #include <utility>
 #include <typeinfo>
 #include <stdexcept>
 #include <cassert>
+
+#include <azmq/detail/assert.hpp>
 
 namespace azmq { namespace util {
 // define AZMQ_LOG_UNCHECKED *BEFORE* including expected.hpp to forward declare the following
@@ -65,7 +67,7 @@ public:
         if (unchecked_)
             log_expected_unchecked(err_);
 #else
-        BOOST_ASSERT_MSG(!unchecked_, "error result not checked");
+        AZMQ_ASSERT_MSG(!unchecked_, "error result not checked");
 #endif
     }
 
