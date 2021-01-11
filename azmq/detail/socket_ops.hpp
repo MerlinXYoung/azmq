@@ -130,8 +130,9 @@ namespace detail {
             std::smatch mres;
             int rc = -1;
             if (std::regex_match(ep, mres, simple_tcp)) {
-                if (zmq_bind(socket.get(), ep.c_str()) == 0)
+                if (zmq_bind(socket.get(), ep.c_str()) == 0){
                     rc = static_cast<uint16_t>(atoi(mres.str(1).c_str()));
+                }
             } else if (std::regex_match(ep, mres, dynamic_tcp)) {
                 auto const& hostname = mres.str(1);
                 auto const& opcode = mres.str(2);
@@ -149,7 +150,7 @@ namespace detail {
                 }
                 auto attempts = last - first;
                 while (rc < 0 && attempts--) {
-                    ep = util::format("%s:%d", hostname, port);
+                    ep = util::format("%s:%d", hostname.c_str(), port);
                     if (zmq_bind(socket.get(), ep.c_str()) == 0)
                         rc = port;
                     if (++port > last)

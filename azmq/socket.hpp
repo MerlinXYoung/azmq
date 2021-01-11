@@ -454,8 +454,6 @@ public:
                      asio::error_code & ec) {
         Sender<ConstBufferSequence> sender(*this);
         return sender.send(buffers, flags, ec);
-
-        // return get_service().send(get_implementation(), message(buffers), flags, ec);
     }
 
     // template<typename ConstBufferSequence, bool IsSequence 

@@ -586,17 +586,36 @@ TEST_CASE( "Socket Monitor", "[socket]" ) {
 
     ios_m.stop();
     t.join();
-
-    REQUIRE(client_monitor.events_.size() == 3);
+    // std::for_each(client_monitor.events_.begin(), client_monitor.events_.end(), [](const monitor_handler::event_t& e){
+    //     std::cout<<"event:"<<std::hex<<e.e<<std::endl;
+    // });
+    REQUIRE(client_monitor.events_.size() == 4);
     CHECK(client_monitor.events_[0].e == ZMQ_EVENT_CONNECT_DELAYED);
     CHECK(client_monitor.events_[1].e == ZMQ_EVENT_CONNECTED);
-    CHECK(client_monitor.events_[2].e == ZMQ_EVENT_MONITOR_STOPPED);
+    CHECK(client_monitor.events_[2].e == ZMQ_EVENT_HANDSHAKE_SUCCEEDED);
+    CHECK(client_monitor.events_[3].e == ZMQ_EVENT_MONITOR_STOPPED);
 
-    REQUIRE(server_monitor.events_.size() == 4);
-    CHECK(server_monitor.events_[0].e == ZMQ_EVENT_LISTENING);
-    CHECK(server_monitor.events_[1].e == ZMQ_EVENT_ACCEPTED);
-    CHECK(server_monitor.events_[2].e == ZMQ_EVENT_CLOSED);
-    CHECK(server_monitor.events_[3].e == ZMQ_EVENT_MONITOR_STOPPED);
+std::for_each(server_monitor.events_.begin(), server_monitor.events_.end(), [](const monitor_handler::event_t& e){
+        std::cout<<"event:"<<std::hex<<e.e<<std::endl;
+    });
+    // REQUIRE(server_monitor.events_.size() == 6);
+    if(server_monitor.events_.size() == 6){
+        CHECK(server_monitor.events_[0].e == ZMQ_EVENT_LISTENING);
+        CHECK(server_monitor.events_[1].e == ZMQ_EVENT_ACCEPTED);
+        CHECK(server_monitor.events_[2].e == ZMQ_EVENT_HANDSHAKE_SUCCEEDED);
+        CHECK(server_monitor.events_[3].e == ZMQ_EVENT_CLOSED );
+        CHECK(server_monitor.events_[4].e == ZMQ_EVENT_DISCONNECTED);
+        CHECK(server_monitor.events_[5].e == ZMQ_EVENT_MONITOR_STOPPED);
+    }else if(server_monitor.events_.size() == 5){
+        CHECK(server_monitor.events_[0].e == ZMQ_EVENT_LISTENING);
+        CHECK(server_monitor.events_[1].e == ZMQ_EVENT_ACCEPTED);
+        CHECK(server_monitor.events_[2].e == ZMQ_EVENT_HANDSHAKE_SUCCEEDED);
+        CHECK(server_monitor.events_[3].e == ZMQ_EVENT_CLOSED );
+        CHECK(server_monitor.events_[4].e == ZMQ_EVENT_MONITOR_STOPPED);
+    }else{
+        REQUIRE(false);
+    }
+    
 }
 
 TEST_CASE( "Attach Method", "[socket]" ) {
