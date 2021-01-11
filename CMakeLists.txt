@@ -3,13 +3,16 @@ project(azmq)
 
 include(AzmqCPack.cmake)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-   set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
-   set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
-elseif (NOT MSVC)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
-endif()
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+#    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+#    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+# elseif (NOT MSVC)
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+# endif()
 
 if (${CMAKE_CXX_PLATFORM_ID} STREQUAL "Windows")
     # Build for Windows Vista / Windows Server 2008 and later

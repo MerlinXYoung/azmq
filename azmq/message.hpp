@@ -31,6 +31,8 @@
 #include <string_view>
 #endif
 
+#include <iterator>
+
 namespace azmq {
 namespace detail {
     struct socket_ops;
@@ -229,6 +231,7 @@ namespace detail {
         inline bool more() const noexcept {
             return zmq_msg_more(const_cast<zmq_msg_t*>(&msg_)) ? true : false;
         }
+#if 0
     using iterator = char*;
     using const_iterator = const char*;
         const_iterator begin()const noexcept{
@@ -237,6 +240,7 @@ namespace detail {
         const_iterator end()const noexcept{
             return reinterpret_cast<const_iterator>(data())+size();
         }
+#endif
     private:
         friend detail::socket_ops;
         zmq_msg_t msg_;

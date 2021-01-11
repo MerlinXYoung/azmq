@@ -414,13 +414,65 @@ public:
      *  If buffers is a sequence of buffers this call will send a multipart
      *  message from the supplied buffer sequence.
      */
-    template<typename ConstBufferSequence>
+#if __cplusplus >= 201703L
+    template<typename ConstBufferSequence, bool IsSequence 
+        = std::is_base_of_v<asio::detail::multiple_buffers,asio::detail::buffer_sequence_cardinality<ConstBufferSequence>> >
     std::size_t send(ConstBufferSequence const& buffers,
                      flags_type flags,
                      asio::error_code & ec) {
-        return get_service().send(get_implementation(), buffers, flags, ec);
+        if constexpr (IsSequence)
+            return get_service().send(get_implementation(), buffers, flags, ec);
+        else
+            return get_service().send(get_implementation(), message(buffers), flags, ec);
+    }
+#else
+    template< typename ConstBufferSequence, bool IsSequence 
+        = std::is_base_of<asio::detail::multiple_buffers, asio::detail::buffer_sequence_cardinality<ConstBufferSequence> >::value >
+    struct Sender{
+        socket& s_;
+        Sender(socket& s):s_(s){}
+        std::size_t send(ConstBufferSequence const& buffers,
+                     flags_type flags,
+                     asio::error_code & ec) {
+        return s_.get_service().send(s_.get_implementation(), buffers, flags, ec);
+        }
+    };
+
+    template< typename ConstBufferSequence >
+    struct Sender<ConstBufferSequence, false>{
+        socket& s_;
+        Sender(socket& s):s_(s){}
+        std::size_t send(ConstBufferSequence const& buffers,
+                     flags_type flags,
+                     asio::error_code & ec) {
+        return s_.get_service().send(s_.get_implementation(), message(buffers), flags, ec);
+        }
+    };
+    template<class ConstBufferSequence>
+    std::size_t send(ConstBufferSequence const& buffers,
+                     flags_type flags,
+                     asio::error_code & ec) {
+        Sender<ConstBufferSequence> sender(*this);
+        return sender.send(buffers, flags, ec);
+
+        // return get_service().send(get_implementation(), message(buffers), flags, ec);
     }
 
+    // template<typename ConstBufferSequence, bool IsSequence 
+    //     = std::is_base_of<asio::detail::multiple_buffers, asio::detail::buffer_sequence_cardinality<ConstBufferSequence> >::value >
+    // std::size_t send(ConstBufferSequence const& buffers,
+    //                  flags_type flags,
+    //                  asio::error_code & ec) {
+    //     return get_service().send(get_implementation(), buffers, flags, ec);
+    // }
+    // template<class ConstBufferSequence>
+    // std::size_t send<ConstBufferSequence, false>(ConstBufferSequence const& buffers,
+    //                  flags_type flags,
+    //                  asio::error_code & ec) {
+
+    //     return get_service().send(get_implementation(), message(buffers), flags, ec);
+    // }
+#endif
     /** \brief Send some data to the socket
      *  \tparam ConstBufferSequence
      *  \param buffers buffer(s) to send
@@ -430,7 +482,7 @@ public:
      *  If buffers is a sequence of buffers this call will send a multipart
      *  message from the supplied buffer sequence.
      */
-    template<typename ConstBufferSequence>
+    template<typename ConstBufferSequence/*, bool IsSequence = asio::is_const_buffer_sequence<ConstBufferSequence>::value*/>
     std::size_t send(ConstBufferSequence const& buffers,
                      flags_type flags = 0) {
         asio::error_code ec;
