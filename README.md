@@ -1,10 +1,14 @@
-# AZMQ Boost Asio + ZeroMQ
+# Focked from https://github.com/zeromq/azmq
+
+ASIO_SANDONLY
+
+# AZMQ Asio + ZeroMQ
 
 ## Welcome
-The azmq library provides Boost Asio style bindings for ZeroMQ
+The azmq library provides Asio style bindings for ZeroMQ
 
 This library is built on top of ZeroMQ's standard C interface and is
-intended to work well with C++ applications which use the Boost libraries
+intended to work well with C++ applications which use the libraries
 in general, and Asio in particular.
 
 The main abstraction exposed by the library is azmq::socket which
@@ -21,19 +25,19 @@ which supports C++11. Currently this has been tested with -
 * Xcode 6 on OS X 10.9
 * Xcode 6.4 on OS X 10.10
 * Xcode 7.1 on OS X 10.11
-* GCC 4.8 + Boost 1.48 on CentOS 6
-* GCC 4.8 + Boost 1.53 on CentOS 7
+* GCC 4.8 + 1.48 on CentOS 6
+* GCC 4.8 + 1.53 on CentOS 7
 * GCC 4.8 on Arch Linux and Ubuntu
 * GCC 4.8 on Ubuntu
-* GCC 5.3 + Boost 1.60 on Ubuntu
+* GCC 5.3 + 1.60 on Ubuntu
 * Microsoft Visual Studio 2013 on Windows Server 2008 R2
 
 Library dependencies are -
-* Boost 1.48 or later
+* 1.48 or later
 * ZeroMQ 4.0.x
 
 Tests and example code require -
-* Boost 1.54 or later
+* 1.54 or later
 
 To build on Linux / OS X -
 ```
@@ -56,7 +60,7 @@ You can also open Visual Studio solution from `build` directory after invoking C
 
 To change the default install location use `-DCMAKE_INSTALL_PREFIX` when invoking CMake.
 
-To change where the build looks for Boost and ZeroMQ use `-DBOOST_ROOT=<my custom Boost install>` and `-DZMQ_ROOT=<my custom ZeroMQ install>` when invoking CMake. Or set `BOOST_ROOT` and `ZMQ_ROOT` environment variables.
+To change where the build looks for and ZeroMQ use `-DZMQ_ROOT=<my custom ZeroMQ install>` when invoking CMake. Or set `ZMQ_ROOT` environment variables.
 
 ## Packaging via CPack
 
@@ -76,13 +80,13 @@ http://zeromq.org/intro:read-the-manual
 
 ```cpp
 #include <azmq/socket.hpp>
-#include <asio.hpp>
+#include <asio/asio.hpp>
 #include <array>
 
 namespace asio = boost::asio;
 
 int main(int argc, char** argv) {
-    asio::io_service ios;
+    asio::io_context ios;
     azmq::sub_socket subscriber(ios);
     subscriber.connect("tcp://192.168.55.112:5556");
     subscriber.connect("tcp://192.168.55.201:7721");
@@ -109,7 +113,7 @@ Further examples may be found in doc/examples
 ## Copying
 
 Use of this software is granted under the the BOOST 1.0 license
-(same as Boost Asio).  For details see the file `LICENSE-BOOST_1_0
+(same as Asio).  For details see the file `LICENSE-BOOST_1_0
 included with the distribution.
 
 ## Contributing
